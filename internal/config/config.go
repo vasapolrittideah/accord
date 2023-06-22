@@ -2,7 +2,12 @@ package config
 
 import (
 	"fmt"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
+	validate "github.com/vasapolrittideah/accord/internal/validator"
+	"github.com/vasapolrittideah/accord/internal/validator/translations"
+	"github.com/vasapolrittideah/accord/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
@@ -26,6 +31,8 @@ type Constants struct {
 	RefreshTokenExpiresIn  time.Duration `mapstructure:"REFRESH_TOKEN_EXPIRED_IN"`
 	AccessTokenMaxAge      int           `mapstructure:"ACCESS_TOKEN_MAXAGE"`
 	RefreshTokenMaxAge     int           `mapstructure:"REFRESH_TOKEN_MAXAGE"`
+	ValidationTranslator   ut.Translator
+	Validate               *validator.Validate
 }
 
 type Config struct {
@@ -62,7 +69,9 @@ func loadEnvironmentVariables() (constants *Constants, err error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
-	viper.SetDefault("PORT", "8080")
+	viper.SetDefault("ServerPort", "8080")
+	viper.Set("ValidationTranslator", translations.RegisterTranslations(validate.Validate))
+	viper.Set("Validate", validate.Validate)
 
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
@@ -90,5 +99,5 @@ func connectDatabase(constants *Constants) (*gorm.DB, error) {
 
 func migrateDatabase(config *Config) error {
 	config.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
-	return config.DB.AutoMigrate()
+	return config.DB.AutoMigrate(&models.User{})
 }

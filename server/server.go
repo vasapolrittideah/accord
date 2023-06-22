@@ -5,6 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/vasapolrittideah/accord/features/auth"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/healthcheck"
 	"log"
@@ -32,7 +33,7 @@ func NewServer(version string) *Server {
 	}
 }
 
-func (a *Server) Run() {
+func (s *Server) Run() {
 	app := fiber.New()
 	app.Use(
 		recover.New(),
@@ -52,10 +53,14 @@ func (a *Server) Run() {
 		}),
 	)
 
-	healthcheck.RegisterHandler(app, a.version)
+	healthcheck.RegisterHandler(app, s.version)
+
+	router := app.Group("/api/v1")
+
+	auth.RegisterHandlers(router, auth.NewService(auth.NewRepository(s.conf.DB)), s.conf)
 
 	go func() {
-		if err := app.Listen(":" + a.conf.ServerPort); err != nil {
+		if err := app.Listen(":" + s.conf.ServerPort); err != nil {
 			log.Fatalf("Failed to listen and serve application: %+v", err)
 		}
 	}()
