@@ -5,7 +5,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/vasapolrittideah/accord/features/auth"
+	"github.com/vasapolrittideah/accord/features/auth/handler"
+	"github.com/vasapolrittideah/accord/features/auth/repository"
+	"github.com/vasapolrittideah/accord/features/auth/service"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/healthcheck"
 	"log"
@@ -57,7 +59,7 @@ func (s *Server) Run() {
 
 	router := app.Group("/api/v1")
 
-	auth.RegisterHandlers(router, auth.NewService(auth.NewRepository(s.conf.DB)), s.conf)
+	handler.RegisterHandlers(router, service.NewAuthService(repository.NewRepository(s.conf.DB), s.conf), s.conf)
 
 	go func() {
 		if err := app.Listen(":" + s.conf.ServerPort); err != nil {
