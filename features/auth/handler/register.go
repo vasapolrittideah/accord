@@ -3,11 +3,11 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/vasapolrittideah/accord/features/auth/middleware"
-	"github.com/vasapolrittideah/accord/features/auth/service"
+	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
 )
 
-func RegisterHandlers(r fiber.Router, conf *config.Config, service service.AuthService, middleware middleware.AuthMiddleware) {
+func RegisterHandlers(r fiber.Router, conf *config.Config, service usecase.AuthUseCase, middleware middleware.AuthMiddleware) {
 	authHandler := NewAuthHandler(service, conf)
 	router := r.Group("/auth")
 

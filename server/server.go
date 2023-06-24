@@ -8,7 +8,7 @@ import (
 	"github.com/vasapolrittideah/accord/features/auth/handler"
 	"github.com/vasapolrittideah/accord/features/auth/middleware"
 	"github.com/vasapolrittideah/accord/features/auth/repository"
-	"github.com/vasapolrittideah/accord/features/auth/service"
+	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/healthcheck"
 	"log"
@@ -60,7 +60,7 @@ func (s *Server) Run() {
 
 	router := app.Group("/api/v1")
 
-	authService := service.NewAuthService(repository.NewRepository(s.conf.DB), s.conf)
+	authService := usecase.NewAuthUseCase(repository.NewRepository(s.conf.DB), s.conf)
 	authMiddleware := middleware.NewAuthMiddleware(authService)
 	handler.RegisterHandlers(router, s.conf, authService, authMiddleware)
 

@@ -3,7 +3,7 @@ package middleware
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/vasapolrittideah/accord/features/auth/service"
+	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/response"
 )
@@ -14,10 +14,10 @@ type AuthMiddleware interface {
 }
 
 type authMiddleware struct {
-	service service.AuthService
+	service usecase.AuthUseCase
 }
 
-func NewAuthMiddleware(service service.AuthService) AuthMiddleware {
+func NewAuthMiddleware(service usecase.AuthUseCase) AuthMiddleware {
 	return authMiddleware{service}
 }
 

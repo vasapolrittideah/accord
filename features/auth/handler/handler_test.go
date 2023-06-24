@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/vasapolrittideah/accord/features/auth/middleware"
-	"github.com/vasapolrittideah/accord/features/auth/service"
+	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/test"
 	"github.com/vasapolrittideah/accord/models"
@@ -18,7 +18,7 @@ import (
 
 func TestSignUp(t *testing.T) {
 	app := fiber.New()
-	mockAuthService := service.NewMockAuthService(t)
+	mockAuthService := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
 	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
@@ -29,7 +29,7 @@ func TestSignUp(t *testing.T) {
 
 	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
 
-	signUpBody := service.SignUpRequest{
+	signUpBody := usecase.SignUpRequest{
 		Name:            "test",
 		Email:           "test@admin.com",
 		Password:        "P@ssword!",
@@ -65,7 +65,7 @@ func TestSignUp(t *testing.T) {
 
 func TestSignIn(t *testing.T) {
 	app := fiber.New()
-	mockAuthService := service.NewMockAuthService(t)
+	mockAuthService := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
 	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
@@ -76,7 +76,7 @@ func TestSignIn(t *testing.T) {
 
 	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
 
-	signInBody := service.SignInRequest{
+	signInBody := usecase.SignInRequest{
 		Email:    "test@admin.com",
 		Password: "P@ssword!",
 	}
@@ -84,7 +84,7 @@ func TestSignIn(t *testing.T) {
 	body, err := json.Marshal(signInBody)
 	assert.NoError(t, err)
 
-	token := &service.Tokens{
+	token := &usecase.Tokens{
 		AccessToken:  "access-token",
 		RefreshToken: "refresh-token",
 	}
@@ -96,7 +96,7 @@ func TestSignIn(t *testing.T) {
 
 	resp, _ := app.Test(req)
 
-	data, _ := test.GetDataFromResponse[service.Tokens](resp)
+	data, _ := test.GetDataFromResponse[usecase.Tokens](resp)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	assert.Equal(t, token, data)
@@ -104,11 +104,12 @@ func TestSignIn(t *testing.T) {
 
 func TestSignOut(t *testing.T) {
 	app := fiber.New()
-	authService := service.NewMockAuthService(t)
+	authService := usecase.NewMockAuthUseCase(t)
 	authMiddleware := middleware.NewMockAuthMiddleware(t)
 
 	userId := uuid.New()
 
+	// Assume that the user is authorized
 	authMiddleware.On("AuthenticateWithAccessToken", &config.Config{}).Return(
 		func(c *fiber.Ctx) error {
 			c.Locals("sub", userId.String())

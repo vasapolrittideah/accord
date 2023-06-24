@@ -3,23 +3,23 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/vasapolrittideah/accord/features/auth/service"
+	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/response"
 	validate "github.com/vasapolrittideah/accord/internal/validator"
 )
 
 type AuthHandler struct {
-	service service.AuthService
+	service usecase.AuthUseCase
 	conf    *config.Config
 }
 
-func NewAuthHandler(service service.AuthService, conf *config.Config) AuthHandler {
+func NewAuthHandler(service usecase.AuthUseCase, conf *config.Config) AuthHandler {
 	return AuthHandler{service, conf}
 }
 
 func (h AuthHandler) SignUp(c *fiber.Ctx) error {
-	payload := new(service.SignUpRequest)
+	payload := new(usecase.SignUpRequest)
 
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(
@@ -39,7 +39,7 @@ func (h AuthHandler) SignUp(c *fiber.Ctx) error {
 }
 
 func (h AuthHandler) SignIn(c *fiber.Ctx) error {
-	payload := new(service.SignInRequest)
+	payload := new(usecase.SignInRequest)
 
 	if err := c.BodyParser(payload); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(

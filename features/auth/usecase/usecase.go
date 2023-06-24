@@ -1,4 +1,4 @@
-package service
+package usecase
 
 import (
 	"encoding/base64"
@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-//go:generate mockery --name AuthService --filename service_mock.go
-type AuthService interface {
+//go:generate mockery --name AuthUseCase --filename usecase_mock.go
+type AuthUseCase interface {
 	SignUp(payload SignUpRequest) (*models.User, error)
 	SignIn(payload SignInRequest) (*Tokens, error)
 	SignOut(userId uuid.UUID) (*models.User, error)
@@ -26,7 +26,7 @@ type AuthService interface {
 	VerifyRefreshToken(encoded string, refreshToken string) (bool, error)
 }
 
-type authService struct {
+type authUseCase struct {
 	userRepo repository.UserRepository
 	conf     *config.Config
 }
@@ -48,11 +48,11 @@ type Tokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func NewAuthService(repo repository.UserRepository, conf *config.Config) AuthService {
-	return authService{repo, conf}
+func NewAuthUseCase(repo repository.UserRepository, conf *config.Config) AuthUseCase {
+	return authUseCase{repo, conf}
 }
 
-func (s authService) SignUp(payload SignUpRequest) (*models.User, error) {
+func (s authUseCase) SignUp(payload SignUpRequest) (*models.User, error) {
 	if payload.Password != payload.PasswordConfirm {
 		return nil, errors.New("passwords do not match")
 	}
@@ -83,7 +83,7 @@ func (s authService) SignUp(payload SignUpRequest) (*models.User, error) {
 	return &user, nil
 }
 
-func (s authService) SignIn(payload SignInRequest) (*Tokens, error) {
+func (s authUseCase) SignIn(payload SignInRequest) (*Tokens, error) {
 	user, err := s.userRepo.GetByEmail(payload.Email)
 	if err != nil {
 		return nil, errors.New("email does not exist")
@@ -128,7 +128,7 @@ func (s authService) SignIn(payload SignInRequest) (*Tokens, error) {
 	return tokens, nil
 }
 
-func (s authService) SignOut(userId uuid.UUID) (*models.User, error) {
+func (s authUseCase) SignOut(userId uuid.UUID) (*models.User, error) {
 	user, err := s.userRepo.UpdateUser(userId, models.User{RefreshToken: ""})
 	if err != nil {
 		return nil, errors.New("unable to update user to the database")
@@ -137,7 +137,7 @@ func (s authService) SignOut(userId uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
-func (s authService) RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error) {
+func (s authUseCase) RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error) {
 	user, err := s.userRepo.GetUser(userId)
 	if err != nil {
 		return nil, errors.New("unable to get user from the database")
@@ -179,7 +179,7 @@ func (s authService) RefreshToken(userId uuid.UUID, userRefreshToken string) (*T
 	return tokens, nil
 }
 
-func (s authService) GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error) {
+func (s authUseCase) GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(privateKey)
 	if err != nil {
 		return "", errors.New("unable to decode key: " + err.Error())
@@ -205,7 +205,7 @@ func (s authService) GenerateToken(ttl time.Duration, privateKey string, userId 
 	return token, nil
 }
 
-func (s authService) ValidateToken(token string, publicKey string) (*jwt.Token, error) {
+func (s authUseCase) ValidateToken(token string, publicKey string) (*jwt.Token, error) {
 	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
 	if err != nil {
 		return nil, errors.New("unable to decode key: " + err.Error())
@@ -224,7 +224,7 @@ func (s authService) ValidateToken(token string, publicKey string) (*jwt.Token, 
 	})
 }
 
-func (s authService) HashRefreshToken(refreshToken string) (string, error) {
+func (s authUseCase) HashRefreshToken(refreshToken string) (string, error) {
 	argon := argon2.DefaultConfig()
 
 	encoded, err := argon.HashEncoded([]byte(refreshToken))
@@ -235,6 +235,6 @@ func (s authService) HashRefreshToken(refreshToken string) (string, error) {
 	return string(encoded), nil
 }
 
-func (s authService) VerifyRefreshToken(encoded string, refreshToken string) (bool, error) {
+func (s authUseCase) VerifyRefreshToken(encoded string, refreshToken string) (bool, error) {
 	return argon2.VerifyEncoded([]byte(refreshToken), []byte(encoded))
 }
