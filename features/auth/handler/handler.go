@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"github.com/vasapolrittideah/accord/features/auth/service"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/response"
@@ -55,4 +56,29 @@ func (h AuthHandler) SignIn(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusOK).JSON(response.Success(token))
+}
+
+func (h AuthHandler) SignOut(c *fiber.Ctx) error {
+	uuidString := c.Locals("sub")
+	userId, _ := uuid.Parse(uuidString.(string))
+
+	user, err := h.service.SignOut(userId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(user))
+}
+
+func (h AuthHandler) RefreshToken(c *fiber.Ctx) error {
+	uuidString := c.Locals("sub")
+	userId, _ := uuid.Parse(uuidString.(string))
+	refreshToken := c.Locals("refresh_token").(string)
+
+	user, err := h.service.RefreshToken(userId, refreshToken)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
+	}
+
+	return c.Status(fiber.StatusOK).JSON(response.Success(user))
 }

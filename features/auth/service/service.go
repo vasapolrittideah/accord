@@ -14,9 +14,12 @@ import (
 	"time"
 )
 
+//go:generate mockery --name AuthService --filename service_mock.go
 type AuthService interface {
 	SignUp(payload SignUpRequest) (*models.User, error)
 	SignIn(payload SignInRequest) (*Tokens, error)
+	SignOut(userId uuid.UUID) (*models.User, error)
+	RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error)
 	GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error)
 	ValidateToken(token string, publicKey string) (*jwt.Token, error)
 	HashRefreshToken(refreshToken string) (string, error)
@@ -24,7 +27,7 @@ type AuthService interface {
 }
 
 type authService struct {
-	userRepo repository.Repository
+	userRepo repository.UserRepository
 	conf     *config.Config
 }
 
@@ -45,7 +48,7 @@ type Tokens struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func NewAuthService(repo repository.Repository, conf *config.Config) AuthService {
+func NewAuthService(repo repository.UserRepository, conf *config.Config) AuthService {
 	return authService{repo, conf}
 }
 
@@ -115,6 +118,57 @@ func (s authService) SignIn(payload SignInRequest) (*Tokens, error) {
 
 	if _, err = s.userRepo.UpdateUser(user.ID, models.User{RefreshToken: hashedRefreshToken}); err != nil {
 		return nil, errors.New("unable to store token in the database")
+	}
+
+	tokens := &Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	return tokens, nil
+}
+
+func (s authService) SignOut(userId uuid.UUID) (*models.User, error) {
+	user, err := s.userRepo.UpdateUser(userId, models.User{RefreshToken: ""})
+	if err != nil {
+		return nil, errors.New("unable to update user to the database")
+	}
+
+	return &user, nil
+}
+
+func (s authService) RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error) {
+	user, err := s.userRepo.GetUser(userId)
+	if err != nil {
+		return nil, errors.New("unable to get user from the database")
+	}
+
+	if ok, err := s.VerifyRefreshToken(user.RefreshToken, userRefreshToken); err != nil || !ok {
+		return nil, errors.New("verifying refresh token has been failed")
+	}
+
+	accessToken, err := s.GenerateToken(
+		s.conf.AccessTokenExpiresIn,
+		s.conf.AccessTokenPrivateKey,
+		user.ID,
+	)
+	if err != nil {
+		return nil, errors.New("failed to generate jwt token: " + err.Error())
+	}
+
+	refreshToken, err := s.GenerateToken(
+		s.conf.RefreshTokenExpiresIn,
+		s.conf.RefreshTokenPrivateKey,
+		user.ID,
+	)
+	if err != nil {
+		return nil, errors.New("failed to generate jwt token: " + err.Error())
+	}
+
+	hashedRefreshToken, _ := s.HashRefreshToken(refreshToken)
+	_, err = s.userRepo.UpdateUser(userId, models.User{RefreshToken: hashedRefreshToken})
+	if err != nil {
+		return nil, errors.New("unable to update user to the database")
 	}
 
 	tokens := &Tokens{

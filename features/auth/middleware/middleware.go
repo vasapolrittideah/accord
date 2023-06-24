@@ -8,6 +8,7 @@ import (
 	"github.com/vasapolrittideah/accord/internal/response"
 )
 
+//go:generate mockery --name AuthMiddleware --filename middleware_mock.go
 type AuthMiddleware interface {
 	AuthenticateWithAccessToken(conf *config.Config) fiber.Handler
 }

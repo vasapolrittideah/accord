@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/vasapolrittideah/accord/features/auth/handler"
+	"github.com/vasapolrittideah/accord/features/auth/middleware"
 	"github.com/vasapolrittideah/accord/features/auth/repository"
 	"github.com/vasapolrittideah/accord/features/auth/service"
 	"github.com/vasapolrittideah/accord/internal/config"
@@ -59,7 +60,9 @@ func (s *Server) Run() {
 
 	router := app.Group("/api/v1")
 
-	handler.RegisterHandlers(router, service.NewAuthService(repository.NewRepository(s.conf.DB), s.conf), s.conf)
+	authService := service.NewAuthService(repository.NewRepository(s.conf.DB), s.conf)
+	authMiddleware := middleware.NewAuthMiddleware(authService)
+	handler.RegisterHandlers(router, s.conf, authService, authMiddleware)
 
 	go func() {
 		if err := app.Listen(":" + s.conf.ServerPort); err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/vasapolrittideah/accord/features/auth/middleware"
 	"github.com/vasapolrittideah/accord/features/auth/service"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/test"
@@ -17,9 +18,16 @@ import (
 
 func TestSignUp(t *testing.T) {
 	app := fiber.New()
-	authService := new(service.AuthServiceMock)
+	mockAuthService := service.NewMockAuthService(t)
+	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
-	RegisterHandlers(app, authService, &config.Config{})
+	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
+		func(c *fiber.Ctx) error {
+			return c.Next()
+		},
+	)
+
+	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
 
 	signUpBody := service.SignUpRequest{
 		Name:            "test",
@@ -42,14 +50,14 @@ func TestSignUp(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	authService.On("SignUp", signUpBody).Return(user, nil)
+	mockAuthService.EXPECT().SignUp(signUpBody).Return(user, nil)
 
 	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
 
-	data, err := test.GetDataFromResponse[models.User](resp)
+	data, _ := test.GetDataFromResponse[models.User](resp)
 
 	assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
 	assert.Equal(t, user, data)
@@ -57,9 +65,16 @@ func TestSignUp(t *testing.T) {
 
 func TestSignIn(t *testing.T) {
 	app := fiber.New()
-	authService := new(service.AuthServiceMock)
+	mockAuthService := service.NewMockAuthService(t)
+	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
-	RegisterHandlers(app, authService, &config.Config{})
+	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
+		func(c *fiber.Ctx) error {
+			return c.Next()
+		},
+	)
+
+	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
 
 	signInBody := service.SignInRequest{
 		Email:    "test@admin.com",
@@ -74,15 +89,55 @@ func TestSignIn(t *testing.T) {
 		RefreshToken: "refresh-token",
 	}
 
-	authService.On("SignIn", signInBody).Return(token, nil)
+	mockAuthService.EXPECT().SignIn(signInBody).Return(token, nil)
 
 	req := httptest.NewRequest("POST", "/auth/signin", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
 
-	data, err := test.GetDataFromResponse[service.Tokens](resp)
+	data, _ := test.GetDataFromResponse[service.Tokens](resp)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	assert.Equal(t, token, data)
+}
+
+func TestSignOut(t *testing.T) {
+	app := fiber.New()
+	authService := service.NewMockAuthService(t)
+	authMiddleware := middleware.NewMockAuthMiddleware(t)
+
+	userId := uuid.New()
+
+	authMiddleware.On("AuthenticateWithAccessToken", &config.Config{}).Return(
+		func(c *fiber.Ctx) error {
+			c.Locals("sub", userId.String())
+			return c.Next()
+		},
+	)
+
+	RegisterHandlers(app, &config.Config{}, authService, authMiddleware)
+
+	user := &models.User{
+		ID:        uuid.New(),
+		Name:      "Kim",
+		Email:     "kim@gmail.com",
+		Role:      "USER",
+		Provider:  "local",
+		Verified:  false,
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+	}
+
+	authService.On("SignOut", userId).Return(user, nil)
+
+	req := httptest.NewRequest("POST", "/auth/signout", nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, _ := app.Test(req)
+
+	data, _ := test.GetDataFromResponse[models.User](resp)
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	assert.Equal(t, user, data)
 }
