@@ -18,5 +18,8 @@ jobs:
           paths:
             - "/go/pkg/mod"
       - run:
+          name: Create env file
+          command: echo "$ENV_BASE64" | base64 --decode > .env
+      - run:
           name: Run tests
           command: go test -v ./...
