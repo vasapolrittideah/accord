@@ -8,8 +8,6 @@ import (
 
 	models "github.com/vasapolrittideah/accord/models"
 
-	time "time"
-
 	uuid "github.com/google/uuid"
 )
 
@@ -26,77 +24,25 @@ func (_m *MockAuthUseCase) EXPECT() *MockAuthUseCase_Expecter {
 	return &MockAuthUseCase_Expecter{mock: &_m.Mock}
 }
 
-// GenerateToken provides a mock function with given fields: ttl, privateKey, userId
-func (_m *MockAuthUseCase) GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error) {
-	ret := _m.Called(ttl, privateKey, userId)
+// ParseToken provides a mock function with given fields: tokenString
+func (_m *MockAuthUseCase) ParseToken(tokenString string) (*jwt.MapClaims, error) {
+	ret := _m.Called(tokenString)
 
-	var r0 string
+	var r0 *jwt.MapClaims
 	var r1 error
-	if rf, ok := ret.Get(0).(func(time.Duration, string, uuid.UUID) (string, error)); ok {
-		return rf(ttl, privateKey, userId)
+	if rf, ok := ret.Get(0).(func(string) (*jwt.MapClaims, error)); ok {
+		return rf(tokenString)
 	}
-	if rf, ok := ret.Get(0).(func(time.Duration, string, uuid.UUID) string); ok {
-		r0 = rf(ttl, privateKey, userId)
+	if rf, ok := ret.Get(0).(func(string) *jwt.MapClaims); ok {
+		r0 = rf(tokenString)
 	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(time.Duration, string, uuid.UUID) error); ok {
-		r1 = rf(ttl, privateKey, userId)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockAuthUseCase_GenerateToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GenerateToken'
-type MockAuthUseCase_GenerateToken_Call struct {
-	*mock.Call
-}
-
-// GenerateToken is a helper method to define mock.On call
-//   - ttl time.Duration
-//   - privateKey string
-//   - userId uuid.UUID
-func (_e *MockAuthUseCase_Expecter) GenerateToken(ttl interface{}, privateKey interface{}, userId interface{}) *MockAuthUseCase_GenerateToken_Call {
-	return &MockAuthUseCase_GenerateToken_Call{Call: _e.mock.On("GenerateToken", ttl, privateKey, userId)}
-}
-
-func (_c *MockAuthUseCase_GenerateToken_Call) Run(run func(ttl time.Duration, privateKey string, userId uuid.UUID)) *MockAuthUseCase_GenerateToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(time.Duration), args[1].(string), args[2].(uuid.UUID))
-	})
-	return _c
-}
-
-func (_c *MockAuthUseCase_GenerateToken_Call) Return(_a0 string, _a1 error) *MockAuthUseCase_GenerateToken_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockAuthUseCase_GenerateToken_Call) RunAndReturn(run func(time.Duration, string, uuid.UUID) (string, error)) *MockAuthUseCase_GenerateToken_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HashRefreshToken provides a mock function with given fields: refreshToken
-func (_m *MockAuthUseCase) HashRefreshToken(refreshToken string) (string, error) {
-	ret := _m.Called(refreshToken)
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(refreshToken)
-	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(refreshToken)
-	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*jwt.MapClaims)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(refreshToken)
+		r1 = rf(tokenString)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -104,30 +50,30 @@ func (_m *MockAuthUseCase) HashRefreshToken(refreshToken string) (string, error)
 	return r0, r1
 }
 
-// MockAuthUseCase_HashRefreshToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HashRefreshToken'
-type MockAuthUseCase_HashRefreshToken_Call struct {
+// MockAuthUseCase_ParseToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ParseToken'
+type MockAuthUseCase_ParseToken_Call struct {
 	*mock.Call
 }
 
-// HashRefreshToken is a helper method to define mock.On call
-//   - refreshToken string
-func (_e *MockAuthUseCase_Expecter) HashRefreshToken(refreshToken interface{}) *MockAuthUseCase_HashRefreshToken_Call {
-	return &MockAuthUseCase_HashRefreshToken_Call{Call: _e.mock.On("HashRefreshToken", refreshToken)}
+// ParseToken is a helper method to define mock.On call
+//   - tokenString string
+func (_e *MockAuthUseCase_Expecter) ParseToken(tokenString interface{}) *MockAuthUseCase_ParseToken_Call {
+	return &MockAuthUseCase_ParseToken_Call{Call: _e.mock.On("ParseToken", tokenString)}
 }
 
-func (_c *MockAuthUseCase_HashRefreshToken_Call) Run(run func(refreshToken string)) *MockAuthUseCase_HashRefreshToken_Call {
+func (_c *MockAuthUseCase_ParseToken_Call) Run(run func(tokenString string)) *MockAuthUseCase_ParseToken_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string))
 	})
 	return _c
 }
 
-func (_c *MockAuthUseCase_HashRefreshToken_Call) Return(_a0 string, _a1 error) *MockAuthUseCase_HashRefreshToken_Call {
+func (_c *MockAuthUseCase_ParseToken_Call) Return(_a0 *jwt.MapClaims, _a1 error) *MockAuthUseCase_ParseToken_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockAuthUseCase_HashRefreshToken_Call) RunAndReturn(run func(string) (string, error)) *MockAuthUseCase_HashRefreshToken_Call {
+func (_c *MockAuthUseCase_ParseToken_Call) RunAndReturn(run func(string) (*jwt.MapClaims, error)) *MockAuthUseCase_ParseToken_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -345,114 +291,6 @@ func (_c *MockAuthUseCase_SignUp_Call) Return(_a0 *models.User, _a1 error) *Mock
 }
 
 func (_c *MockAuthUseCase_SignUp_Call) RunAndReturn(run func(SignUpRequest) (*models.User, error)) *MockAuthUseCase_SignUp_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ValidateToken provides a mock function with given fields: token, publicKey
-func (_m *MockAuthUseCase) ValidateToken(token string, publicKey string) (*jwt.Token, error) {
-	ret := _m.Called(token, publicKey)
-
-	var r0 *jwt.Token
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (*jwt.Token, error)); ok {
-		return rf(token, publicKey)
-	}
-	if rf, ok := ret.Get(0).(func(string, string) *jwt.Token); ok {
-		r0 = rf(token, publicKey)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*jwt.Token)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(token, publicKey)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockAuthUseCase_ValidateToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ValidateToken'
-type MockAuthUseCase_ValidateToken_Call struct {
-	*mock.Call
-}
-
-// ValidateToken is a helper method to define mock.On call
-//   - token string
-//   - publicKey string
-func (_e *MockAuthUseCase_Expecter) ValidateToken(token interface{}, publicKey interface{}) *MockAuthUseCase_ValidateToken_Call {
-	return &MockAuthUseCase_ValidateToken_Call{Call: _e.mock.On("ValidateToken", token, publicKey)}
-}
-
-func (_c *MockAuthUseCase_ValidateToken_Call) Run(run func(token string, publicKey string)) *MockAuthUseCase_ValidateToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockAuthUseCase_ValidateToken_Call) Return(_a0 *jwt.Token, _a1 error) *MockAuthUseCase_ValidateToken_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockAuthUseCase_ValidateToken_Call) RunAndReturn(run func(string, string) (*jwt.Token, error)) *MockAuthUseCase_ValidateToken_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// VerifyRefreshToken provides a mock function with given fields: encoded, refreshToken
-func (_m *MockAuthUseCase) VerifyRefreshToken(encoded string, refreshToken string) (bool, error) {
-	ret := _m.Called(encoded, refreshToken)
-
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string) (bool, error)); ok {
-		return rf(encoded, refreshToken)
-	}
-	if rf, ok := ret.Get(0).(func(string, string) bool); ok {
-		r0 = rf(encoded, refreshToken)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(string, string) error); ok {
-		r1 = rf(encoded, refreshToken)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockAuthUseCase_VerifyRefreshToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'VerifyRefreshToken'
-type MockAuthUseCase_VerifyRefreshToken_Call struct {
-	*mock.Call
-}
-
-// VerifyRefreshToken is a helper method to define mock.On call
-//   - encoded string
-//   - refreshToken string
-func (_e *MockAuthUseCase_Expecter) VerifyRefreshToken(encoded interface{}, refreshToken interface{}) *MockAuthUseCase_VerifyRefreshToken_Call {
-	return &MockAuthUseCase_VerifyRefreshToken_Call{Call: _e.mock.On("VerifyRefreshToken", encoded, refreshToken)}
-}
-
-func (_c *MockAuthUseCase_VerifyRefreshToken_Call) Run(run func(encoded string, refreshToken string)) *MockAuthUseCase_VerifyRefreshToken_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockAuthUseCase_VerifyRefreshToken_Call) Return(_a0 bool, _a1 error) *MockAuthUseCase_VerifyRefreshToken_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockAuthUseCase_VerifyRefreshToken_Call) RunAndReturn(run func(string, string) (bool, error)) *MockAuthUseCase_VerifyRefreshToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

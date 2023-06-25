@@ -16,9 +16,9 @@ import (
 	"time"
 )
 
-func TestSignUp(t *testing.T) {
+func TestAuthHandler_SignUn(t *testing.T) {
 	app := fiber.New()
-	mockAuthService := usecase.NewMockAuthUseCase(t)
+	mockAuthUsecase := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
 	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
@@ -27,7 +27,7 @@ func TestSignUp(t *testing.T) {
 		},
 	)
 
-	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
+	RegisterHandlers(app, &config.Config{}, mockAuthUsecase, mockAuthMiddleware)
 
 	signUpBody := usecase.SignUpRequest{
 		Name:            "test",
@@ -50,22 +50,21 @@ func TestSignUp(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	mockAuthService.EXPECT().SignUp(signUpBody).Return(user, nil)
+	mockAuthUsecase.EXPECT().SignUp(signUpBody).Return(user, nil)
 
 	req := httptest.NewRequest("POST", "/auth/signup", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
-
 	data, _ := test.GetDataFromResponse[models.User](resp)
 
 	assert.Equal(t, fiber.StatusCreated, resp.StatusCode)
 	assert.Equal(t, user, data)
 }
 
-func TestSignIn(t *testing.T) {
+func TestAuthHandler_SignIn(t *testing.T) {
 	app := fiber.New()
-	mockAuthService := usecase.NewMockAuthUseCase(t)
+	mockAuthUsecase := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
 	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
@@ -74,7 +73,7 @@ func TestSignIn(t *testing.T) {
 		},
 	)
 
-	RegisterHandlers(app, &config.Config{}, mockAuthService, mockAuthMiddleware)
+	RegisterHandlers(app, &config.Config{}, mockAuthUsecase, mockAuthMiddleware)
 
 	signInBody := usecase.SignInRequest{
 		Email:    "test@admin.com",
@@ -89,20 +88,19 @@ func TestSignIn(t *testing.T) {
 		RefreshToken: "refresh-token",
 	}
 
-	mockAuthService.EXPECT().SignIn(signInBody).Return(token, nil)
+	mockAuthUsecase.EXPECT().SignIn(signInBody).Return(token, nil)
 
 	req := httptest.NewRequest("POST", "/auth/signin", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
-
 	data, _ := test.GetDataFromResponse[usecase.Tokens](resp)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	assert.Equal(t, token, data)
 }
 
-func TestSignOut(t *testing.T) {
+func TestAuthHandler_SignOut(t *testing.T) {
 	app := fiber.New()
 	authService := usecase.NewMockAuthUseCase(t)
 	authMiddleware := middleware.NewMockAuthMiddleware(t)
@@ -136,7 +134,6 @@ func TestSignOut(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
-
 	data, _ := test.GetDataFromResponse[models.User](resp)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)

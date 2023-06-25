@@ -1,17 +1,14 @@
 package usecase
 
 import (
-	"encoding/base64"
 	"errors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-	"github.com/matthewhartstonge/argon2"
 	"github.com/vasapolrittideah/accord/features/auth/repository"
 	"github.com/vasapolrittideah/accord/internal/config"
 	"github.com/vasapolrittideah/accord/internal/utils"
 	"github.com/vasapolrittideah/accord/models"
 	"strings"
-	"time"
 )
 
 //go:generate mockery --name AuthUseCase --filename usecase_mock.go
@@ -20,10 +17,7 @@ type AuthUseCase interface {
 	SignIn(payload SignInRequest) (*Tokens, error)
 	SignOut(userId uuid.UUID) (*models.User, error)
 	RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error)
-	GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error)
-	ValidateToken(token string, publicKey string) (*jwt.Token, error)
-	HashRefreshToken(refreshToken string) (string, error)
-	VerifyRefreshToken(encoded string, refreshToken string) (bool, error)
+	ParseToken(tokenString string) (*jwt.MapClaims, error)
 }
 
 type authUseCase struct {
@@ -52,7 +46,7 @@ func NewAuthUseCase(repo repository.UserRepository, conf *config.Config) AuthUse
 	return authUseCase{repo, conf}
 }
 
-func (s authUseCase) SignUp(payload SignUpRequest) (*models.User, error) {
+func (u authUseCase) SignUp(payload SignUpRequest) (*models.User, error) {
 	if payload.Password != payload.PasswordConfirm {
 		return nil, errors.New("passwords do not match")
 	}
@@ -71,7 +65,7 @@ func (s authUseCase) SignUp(payload SignUpRequest) (*models.User, error) {
 		Provider: "local",
 	}
 
-	user, err := s.userRepo.CreateUser(newUser)
+	user, err := u.userRepo.CreateUser(newUser)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key") {
 			return nil, errors.New("email does already exist")
@@ -83,8 +77,8 @@ func (s authUseCase) SignUp(payload SignUpRequest) (*models.User, error) {
 	return &user, nil
 }
 
-func (s authUseCase) SignIn(payload SignInRequest) (*Tokens, error) {
-	user, err := s.userRepo.GetByEmail(payload.Email)
+func (u authUseCase) SignIn(payload SignInRequest) (*Tokens, error) {
+	user, err := u.userRepo.GetByEmail(payload.Email)
 	if err != nil {
 		return nil, errors.New("email does not exist")
 	}
@@ -93,30 +87,30 @@ func (s authUseCase) SignIn(payload SignInRequest) (*Tokens, error) {
 		return nil, errors.New("password is not correct")
 	}
 
-	accessToken, err := s.GenerateToken(
-		s.conf.AccessTokenExpiresIn,
-		s.conf.AccessTokenPrivateKey,
+	accessToken, err := utils.GenerateToken(
+		u.conf.AccessTokenExpiresIn,
+		u.conf.AccessTokenPrivateKey,
 		user.ID,
 	)
 	if err != nil {
 		return nil, errors.New("failed to generate jwt token: " + err.Error())
 	}
 
-	refreshToken, err := s.GenerateToken(
-		s.conf.RefreshTokenExpiresIn,
-		s.conf.RefreshTokenPrivateKey,
+	refreshToken, err := utils.GenerateToken(
+		u.conf.RefreshTokenExpiresIn,
+		u.conf.RefreshTokenPrivateKey,
 		user.ID,
 	)
 	if err != nil {
 		return nil, errors.New("failed to generate jwt token: " + err.Error())
 	}
 
-	hashedRefreshToken, err := s.HashRefreshToken(refreshToken)
+	hashedRefreshToken, err := utils.HashRefreshToken(refreshToken)
 	if err != nil {
 		return nil, errors.New("unable to hash newly generated token")
 	}
 
-	if _, err = s.userRepo.UpdateUser(user.ID, models.User{RefreshToken: hashedRefreshToken}); err != nil {
+	if _, err = u.userRepo.UpdateUser(user.ID, models.User{RefreshToken: hashedRefreshToken}); err != nil {
 		return nil, errors.New("unable to store token in the database")
 	}
 
@@ -128,8 +122,8 @@ func (s authUseCase) SignIn(payload SignInRequest) (*Tokens, error) {
 	return tokens, nil
 }
 
-func (s authUseCase) SignOut(userId uuid.UUID) (*models.User, error) {
-	user, err := s.userRepo.UpdateUser(userId, models.User{RefreshToken: ""})
+func (u authUseCase) SignOut(userId uuid.UUID) (*models.User, error) {
+	user, err := u.userRepo.UpdateUser(userId, models.User{RefreshToken: ""})
 	if err != nil {
 		return nil, errors.New("unable to update user to the database")
 	}
@@ -137,36 +131,36 @@ func (s authUseCase) SignOut(userId uuid.UUID) (*models.User, error) {
 	return &user, nil
 }
 
-func (s authUseCase) RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error) {
-	user, err := s.userRepo.GetUser(userId)
+func (u authUseCase) RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error) {
+	user, err := u.userRepo.GetUser(userId)
 	if err != nil {
 		return nil, errors.New("unable to get user from the database")
 	}
 
-	if ok, err := s.VerifyRefreshToken(user.RefreshToken, userRefreshToken); err != nil || !ok {
+	if ok, err := utils.VerifyRefreshToken(user.RefreshToken, userRefreshToken); err != nil || !ok {
 		return nil, errors.New("verifying refresh token has been failed")
 	}
 
-	accessToken, err := s.GenerateToken(
-		s.conf.AccessTokenExpiresIn,
-		s.conf.AccessTokenPrivateKey,
+	accessToken, err := utils.GenerateToken(
+		u.conf.AccessTokenExpiresIn,
+		u.conf.AccessTokenPrivateKey,
 		user.ID,
 	)
 	if err != nil {
 		return nil, errors.New("failed to generate jwt token: " + err.Error())
 	}
 
-	refreshToken, err := s.GenerateToken(
-		s.conf.RefreshTokenExpiresIn,
-		s.conf.RefreshTokenPrivateKey,
+	refreshToken, err := utils.GenerateToken(
+		u.conf.RefreshTokenExpiresIn,
+		u.conf.RefreshTokenPrivateKey,
 		user.ID,
 	)
 	if err != nil {
 		return nil, errors.New("failed to generate jwt token: " + err.Error())
 	}
 
-	hashedRefreshToken, _ := s.HashRefreshToken(refreshToken)
-	_, err = s.userRepo.UpdateUser(userId, models.User{RefreshToken: hashedRefreshToken})
+	hashedRefreshToken, _ := utils.HashRefreshToken(refreshToken)
+	_, err = u.userRepo.UpdateUser(userId, models.User{RefreshToken: hashedRefreshToken})
 	if err != nil {
 		return nil, errors.New("unable to update user to the database")
 	}
@@ -179,62 +173,16 @@ func (s authUseCase) RefreshToken(userId uuid.UUID, userRefreshToken string) (*T
 	return tokens, nil
 }
 
-func (s authUseCase) GenerateToken(ttl time.Duration, privateKey string, userId uuid.UUID) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(privateKey)
+func (u authUseCase) ParseToken(tokenString string) (*jwt.MapClaims, error) {
+	token, err := utils.ValidateToken(tokenString, u.conf.AccessTokenPublicKey)
 	if err != nil {
-		return "", errors.New("unable to decode key: " + err.Error())
+		return nil, errors.New("token is invalid or has been expired")
 	}
 
-	key, err := jwt.ParseRSAPrivateKeyFromPEM(decoded)
-	if err != nil {
-		return "", errors.New("unable to parse key: " + err.Error())
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("token is invalid")
 	}
 
-	now := time.Now()
-	claims := jwt.MapClaims{
-		"sub": userId,
-		"iat": now.Unix(),
-		"exp": now.Add(ttl).Unix(),
-	}
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodRS256, claims).SignedString(key)
-	if err != nil {
-		return "", errors.New("unable to sign jwt token: " + err.Error())
-	}
-
-	return token, nil
-}
-
-func (s authUseCase) ValidateToken(token string, publicKey string) (*jwt.Token, error) {
-	decodedPublicKey, err := base64.StdEncoding.DecodeString(publicKey)
-	if err != nil {
-		return nil, errors.New("unable to decode key: " + err.Error())
-	}
-
-	key, err := jwt.ParseRSAPublicKeyFromPEM(decodedPublicKey)
-	if err != nil {
-		return nil, errors.New("unable to parse key: " + err.Error())
-	}
-
-	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, errors.New("unexpected signing method: " + t.Header["alg"].(string))
-		}
-		return key, nil
-	})
-}
-
-func (s authUseCase) HashRefreshToken(refreshToken string) (string, error) {
-	argon := argon2.DefaultConfig()
-
-	encoded, err := argon.HashEncoded([]byte(refreshToken))
-	if err != nil {
-		return "", errors.New("unable to hash refresh token: " + err.Error())
-	}
-
-	return string(encoded), nil
-}
-
-func (s authUseCase) VerifyRefreshToken(encoded string, refreshToken string) (bool, error) {
-	return argon2.VerifyEncoded([]byte(refreshToken), []byte(encoded))
+	return &claims, nil
 }
