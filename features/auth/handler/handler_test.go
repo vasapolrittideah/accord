@@ -41,8 +41,8 @@ func TestSignUp(t *testing.T) {
 
 	user := &models.User{
 		ID:        uuid.New(),
-		Name:      "Kim",
-		Email:     "kim@gmail.com",
+		Name:      signUpBody.Name,
+		Email:     signUpBody.Email,
 		Role:      "USER",
 		Provider:  "local",
 		Verified:  false,
@@ -121,8 +121,8 @@ func TestSignOut(t *testing.T) {
 
 	user := &models.User{
 		ID:        uuid.New(),
-		Name:      "Kim",
-		Email:     "kim@gmail.com",
+		Name:      "test",
+		Email:     "test@admin.com",
 		Role:      "USER",
 		Provider:  "local",
 		Verified:  false,

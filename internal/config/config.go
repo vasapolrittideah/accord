@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/charmbracelet/log"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
@@ -10,7 +11,8 @@ import (
 	"github.com/vasapolrittideah/accord/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -41,32 +43,50 @@ type Config struct {
 }
 
 func New() (config *Config, err error) {
-	constants, err := loadEnvironmentVariables()
+	constants, err := LoadEnvironmentVariables()
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := connectDatabase(constants)
-	if err != nil {
-		return nil, err
-	}
+	config = new(Config)
+	config.Constants = *constants
 
-	log.Println("🎉 Connected successfully to the database")
+	if os.Getenv("ENVIRONMENT") != "test" {
+		db, err := connectDatabase(constants)
+		if err != nil {
+			return nil, err
+		}
 
-	config = &Config{
-		Constants: *constants,
-		DB:        db,
-	}
-	if err := migrateDatabase(config); err != nil {
-		return nil, err
+		log.Info("🎉 Connected successfully to the database")
+
+		config.DB = db
+		if err := migrateDatabase(config); err != nil {
+			return nil, err
+		}
 	}
 
 	return
 }
 
-func loadEnvironmentVariables() (constants *Constants, err error) {
+func LoadEnvironmentVariables() (constants *Constants, err error) {
+	// Add root project directory for config path when testing
+	if os.Getenv("ENVIRONMENT") == "test" {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		rootDir, err := findProjectRoot(currentDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		viper.AddConfigPath(rootDir)
+	}
+
 	viper.AddConfigPath(".")
-	viper.SetConfigFile(".env")
+	viper.SetConfigName(".env")
+	viper.SetConfigType("env")
 	viper.AutomaticEnv()
 
 	viper.SetDefault("ServerPort", "8080")
@@ -100,4 +120,15 @@ func connectDatabase(constants *Constants) (*gorm.DB, error) {
 func migrateDatabase(config *Config) error {
 	config.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
 	return config.DB.AutoMigrate(&models.User{})
+}
+
+func findProjectRoot(currentDir string) (string, error) {
+	for currentDir != "/" {
+		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
+			return currentDir, nil
+		}
+		currentDir = filepath.Dir(currentDir)
+	}
+
+	return "", fmt.Errorf("project root not found")
 }
