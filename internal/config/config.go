@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"github.com/charmbracelet/log"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
@@ -11,6 +10,7 @@ import (
 	"github.com/vasapolrittideah/accord/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -57,7 +57,7 @@ func New() (config *Config, err error) {
 			return nil, err
 		}
 
-		log.Info("🎉 Connected successfully to the database")
+		fmt.Println("🎉 Connected successfully to the database")
 
 		config.DB = db
 		if err := migrateDatabase(config); err != nil {
