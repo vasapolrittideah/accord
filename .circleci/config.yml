@@ -45,7 +45,7 @@ jobs:
           command: |
             go test ./... -race -coverprofile=coverage.out -json > report.json
       - persist_to_workspace:
-          root: ~/repo
+          root: ~/project
           paths:
             - coverage.out
             - report.json
