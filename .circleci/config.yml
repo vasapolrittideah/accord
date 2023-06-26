@@ -1,6 +1,55 @@
 version: "2.1"
 
+orbs:
+  sonarcloud: sonarsource/sonarcloud@1.1.1
+
 jobs:
+  lint:
+    docker:
+      - image: golangci/golangci-lint:v1.53.3
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run: golangci-lint run ./... --out-format=checkstyle --print-issued-lines=false --print-linter-name=false --issues-exit-code=0 --enable=revive > golanci-report.xml
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - golanci-report.xml
+
+  test_and_coverage:
+    docker:
+      - image: cimg/go:1.20.5
+    working_directory: ~/project
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - go-mod-v4-{{ checksum "go.sum" }}
+      - run:
+          name: Install Dependencies
+          command: go get ./...
+      - save_cache:
+          key: go-mod-v4-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+      - run:
+          name: Create env file
+          command: echo "$ENV_BASE64" | base64 --decode > .env
+      - run:
+          name: Run unit tests
+          command: |
+            mkdir -p /tmp/test-reports
+            gotestsum --junitfile /tmp/test-reports/unit-tests.xml
+      - run:
+          name: Run coverage
+          command: |
+            go test ./... -race -coverprofile=coverage.out -json > report.json
+      - persist_to_workspace:
+          root: ~/repo
+          paths:
+            - coverage.out
+            - report.json
+
   build:
     docker:
       - image: cimg/go:1.20.5
@@ -21,5 +70,35 @@ jobs:
           name: Create env file
           command: echo "$ENV_BASE64" | base64 --decode > .env
       - run:
-          name: Run tests
-          command: go test -v ./...
+          name: Run Build
+          command: |
+            mkdir -p /tmp/artifacts/build
+            make build-server
+            mv server /tmp/artifacts/build
+      - store_artifacts:
+          path: /tmp/artifacts/build
+
+  sonar:
+    docker:
+      - image: cimg/go:1.20.5
+    working_directory: ~/project
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/project
+      - sonarcloud/sonar:
+          sonar_token_variable_name: SONAR_TOKEN
+
+workflows:
+  ci:
+    jobs:
+      - lint
+      - test_and_coverage
+      - build
+      - sonar:
+          requires:
+            - lint
+            - test_and_coverage
+      - build:
+          requires:
+            - sonar
