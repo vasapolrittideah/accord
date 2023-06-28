@@ -94,7 +94,6 @@ workflows:
     jobs:
       - lint
       - test_and_coverage
-      - build
       - sonar:
           requires:
             - lint
