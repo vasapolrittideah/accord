@@ -17,7 +17,7 @@ type AuthUseCase interface {
 	SignIn(payload SignInRequest) (*Tokens, error)
 	SignOut(userId uuid.UUID) (*models.User, error)
 	RefreshToken(userId uuid.UUID, userRefreshToken string) (*Tokens, error)
-	ParseToken(tokenString string) (*jwt.MapClaims, error)
+	ParseToken(tokenString, tokenPublicKey string) (*jwt.MapClaims, error)
 }
 
 type authUseCase struct {
@@ -173,8 +173,8 @@ func (u authUseCase) RefreshToken(userId uuid.UUID, userRefreshToken string) (*T
 	return tokens, nil
 }
 
-func (u authUseCase) ParseToken(tokenString string) (*jwt.MapClaims, error) {
-	token, err := utils.ValidateToken(tokenString, u.conf.AccessTokenPublicKey)
+func (u authUseCase) ParseToken(tokenString, tokenPublicKey string) (*jwt.MapClaims, error) {
+	token, err := utils.ValidateToken(tokenString, tokenPublicKey)
 	if err != nil {
 		return nil, errors.New("token is invalid or has been expired")
 	}

@@ -24,25 +24,25 @@ func (_m *MockAuthUseCase) EXPECT() *MockAuthUseCase_Expecter {
 	return &MockAuthUseCase_Expecter{mock: &_m.Mock}
 }
 
-// ParseToken provides a mock function with given fields: tokenString
-func (_m *MockAuthUseCase) ParseToken(tokenString string) (*jwt.MapClaims, error) {
-	ret := _m.Called(tokenString)
+// ParseToken provides a mock function with given fields: tokenString, tokenPublicKey
+func (_m *MockAuthUseCase) ParseToken(tokenString string, tokenPublicKey string) (*jwt.MapClaims, error) {
+	ret := _m.Called(tokenString, tokenPublicKey)
 
 	var r0 *jwt.MapClaims
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (*jwt.MapClaims, error)); ok {
-		return rf(tokenString)
+	if rf, ok := ret.Get(0).(func(string, string) (*jwt.MapClaims, error)); ok {
+		return rf(tokenString, tokenPublicKey)
 	}
-	if rf, ok := ret.Get(0).(func(string) *jwt.MapClaims); ok {
-		r0 = rf(tokenString)
+	if rf, ok := ret.Get(0).(func(string, string) *jwt.MapClaims); ok {
+		r0 = rf(tokenString, tokenPublicKey)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*jwt.MapClaims)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(tokenString)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(tokenString, tokenPublicKey)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -57,13 +57,14 @@ type MockAuthUseCase_ParseToken_Call struct {
 
 // ParseToken is a helper method to define mock.On call
 //   - tokenString string
-func (_e *MockAuthUseCase_Expecter) ParseToken(tokenString interface{}) *MockAuthUseCase_ParseToken_Call {
-	return &MockAuthUseCase_ParseToken_Call{Call: _e.mock.On("ParseToken", tokenString)}
+//   - tokenPublicKey string
+func (_e *MockAuthUseCase_Expecter) ParseToken(tokenString interface{}, tokenPublicKey interface{}) *MockAuthUseCase_ParseToken_Call {
+	return &MockAuthUseCase_ParseToken_Call{Call: _e.mock.On("ParseToken", tokenString, tokenPublicKey)}
 }
 
-func (_c *MockAuthUseCase_ParseToken_Call) Run(run func(tokenString string)) *MockAuthUseCase_ParseToken_Call {
+func (_c *MockAuthUseCase_ParseToken_Call) Run(run func(tokenString string, tokenPublicKey string)) *MockAuthUseCase_ParseToken_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string))
+		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
@@ -73,7 +74,7 @@ func (_c *MockAuthUseCase_ParseToken_Call) Return(_a0 *jwt.MapClaims, _a1 error)
 	return _c
 }
 
-func (_c *MockAuthUseCase_ParseToken_Call) RunAndReturn(run func(string) (*jwt.MapClaims, error)) *MockAuthUseCase_ParseToken_Call {
+func (_c *MockAuthUseCase_ParseToken_Call) RunAndReturn(run func(string, string) (*jwt.MapClaims, error)) *MockAuthUseCase_ParseToken_Call {
 	_c.Call.Return(run)
 	return _c
 }

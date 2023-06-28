@@ -10,7 +10,7 @@ import (
 )
 
 type AuthHandler struct {
-	service usecase.AuthUseCase
+	usecase usecase.AuthUseCase
 	conf    *config.Config
 }
 
@@ -30,7 +30,7 @@ func (h AuthHandler) SignUp(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Fail(errs))
 	}
 
-	user, err := h.service.SignUp(*payload)
+	user, err := h.usecase.SignUp(*payload)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
 	}
@@ -50,7 +50,7 @@ func (h AuthHandler) SignIn(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(response.Fail(errs))
 	}
 
-	token, err := h.service.SignIn(*payload)
+	token, err := h.usecase.SignIn(*payload)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
 	}
@@ -62,7 +62,7 @@ func (h AuthHandler) SignOut(c *fiber.Ctx) error {
 	uuidString := c.Locals("sub")
 	userId, _ := uuid.Parse(uuidString.(string))
 
-	user, err := h.service.SignOut(userId)
+	user, err := h.usecase.SignOut(userId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
 	}
@@ -75,10 +75,11 @@ func (h AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	userId, _ := uuid.Parse(uuidString.(string))
 	refreshToken := c.Locals("refresh_token").(string)
 
-	user, err := h.service.RefreshToken(userId, refreshToken)
+	// Generate new access token and refresh token
+	token, err := h.usecase.RefreshToken(userId, refreshToken)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(response.Error(err.Error()))
 	}
 
-	return c.Status(fiber.StatusOK).JSON(response.Success(user))
+	return c.Status(fiber.StatusOK).JSON(response.Success(token))
 }

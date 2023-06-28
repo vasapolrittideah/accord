@@ -10,7 +10,7 @@ import (
 
 //go:generate mockery --name AuthMiddleware --filename middleware_mock.go
 type AuthMiddleware interface {
-	AuthenticateWithAccessToken(conf *config.Config) fiber.Handler
+	AuthenticateWithJWT(conf *config.Config, tokenType TokenType) fiber.Handler
 }
 
 type authMiddleware struct {
@@ -21,7 +21,14 @@ func NewAuthMiddleware(usecase usecase.AuthUseCase) AuthMiddleware {
 	return authMiddleware{usecase}
 }
 
-func (m authMiddleware) AuthenticateWithAccessToken(conf *config.Config) fiber.Handler {
+type TokenType int
+
+const (
+	Access TokenType = iota
+	Refresh
+)
+
+func (m authMiddleware) AuthenticateWithJWT(conf *config.Config, tokenType TokenType) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		const Bearer = "Bearer"
 		authHandler := c.Get("Authorization")
@@ -41,11 +48,19 @@ func (m authMiddleware) AuthenticateWithAccessToken(conf *config.Config) fiber.H
 				response.Error("Malformed Authorization header"))
 		}
 
-		claims, err := m.usecase.ParseToken(headerParts[1])
+		var publicKey string
+		if tokenType == Access {
+			publicKey = conf.AccessTokenPublicKey
+		} else if tokenType == Refresh {
+			publicKey = conf.RefreshTokenPublicKey
+		}
+
+		claims, err := m.usecase.ParseToken(headerParts[1], publicKey)
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(response.Error(err.Error()))
 		}
 
+		c.Locals("token", headerParts[1])
 		c.Locals("sub", (*claims)["sub"])
 		return c.Next()
 	}

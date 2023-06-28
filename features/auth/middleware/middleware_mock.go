@@ -22,13 +22,13 @@ func (_m *MockAuthMiddleware) EXPECT() *MockAuthMiddleware_Expecter {
 	return &MockAuthMiddleware_Expecter{mock: &_m.Mock}
 }
 
-// AuthenticateWithAccessToken provides a mock function with given fields: conf
-func (_m *MockAuthMiddleware) AuthenticateWithAccessToken(conf *config.Config) func(*fiber.Ctx) error {
-	ret := _m.Called(conf)
+// AuthenticateWithJWT provides a mock function with given fields: conf, tokenType
+func (_m *MockAuthMiddleware) AuthenticateWithJWT(conf *config.Config, tokenType TokenType) func(*fiber.Ctx) error {
+	ret := _m.Called(conf, tokenType)
 
 	var r0 func(*fiber.Ctx) error
-	if rf, ok := ret.Get(0).(func(*config.Config) func(*fiber.Ctx) error); ok {
-		r0 = rf(conf)
+	if rf, ok := ret.Get(0).(func(*config.Config, TokenType) func(*fiber.Ctx) error); ok {
+		r0 = rf(conf, tokenType)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(func(*fiber.Ctx) error)
@@ -38,30 +38,31 @@ func (_m *MockAuthMiddleware) AuthenticateWithAccessToken(conf *config.Config) f
 	return r0
 }
 
-// MockAuthMiddleware_AuthenticateWithAccessToken_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AuthenticateWithAccessToken'
-type MockAuthMiddleware_AuthenticateWithAccessToken_Call struct {
+// MockAuthMiddleware_AuthenticateWithJWT_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AuthenticateWithJWT'
+type MockAuthMiddleware_AuthenticateWithJWT_Call struct {
 	*mock.Call
 }
 
-// AuthenticateWithAccessToken is a helper method to define mock.On call
+// AuthenticateWithJWT is a helper method to define mock.On call
 //   - conf *config.Config
-func (_e *MockAuthMiddleware_Expecter) AuthenticateWithAccessToken(conf interface{}) *MockAuthMiddleware_AuthenticateWithAccessToken_Call {
-	return &MockAuthMiddleware_AuthenticateWithAccessToken_Call{Call: _e.mock.On("AuthenticateWithAccessToken", conf)}
+//   - tokenType TokenType
+func (_e *MockAuthMiddleware_Expecter) AuthenticateWithJWT(conf interface{}, tokenType interface{}) *MockAuthMiddleware_AuthenticateWithJWT_Call {
+	return &MockAuthMiddleware_AuthenticateWithJWT_Call{Call: _e.mock.On("AuthenticateWithJWT", conf, tokenType)}
 }
 
-func (_c *MockAuthMiddleware_AuthenticateWithAccessToken_Call) Run(run func(conf *config.Config)) *MockAuthMiddleware_AuthenticateWithAccessToken_Call {
+func (_c *MockAuthMiddleware_AuthenticateWithJWT_Call) Run(run func(conf *config.Config, tokenType TokenType)) *MockAuthMiddleware_AuthenticateWithJWT_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*config.Config))
+		run(args[0].(*config.Config), args[1].(TokenType))
 	})
 	return _c
 }
 
-func (_c *MockAuthMiddleware_AuthenticateWithAccessToken_Call) Return(_a0 func(*fiber.Ctx) error) *MockAuthMiddleware_AuthenticateWithAccessToken_Call {
+func (_c *MockAuthMiddleware_AuthenticateWithJWT_Call) Return(_a0 func(*fiber.Ctx) error) *MockAuthMiddleware_AuthenticateWithJWT_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockAuthMiddleware_AuthenticateWithAccessToken_Call) RunAndReturn(run func(*config.Config) func(*fiber.Ctx) error) *MockAuthMiddleware_AuthenticateWithAccessToken_Call {
+func (_c *MockAuthMiddleware_AuthenticateWithJWT_Call) RunAndReturn(run func(*config.Config, TokenType) func(*fiber.Ctx) error) *MockAuthMiddleware_AuthenticateWithJWT_Call {
 	_c.Call.Return(run)
 	return _c
 }

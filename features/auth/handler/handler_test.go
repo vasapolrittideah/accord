@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/vasapolrittideah/accord/features/auth/middleware"
 	"github.com/vasapolrittideah/accord/features/auth/usecase"
 	"github.com/vasapolrittideah/accord/internal/config"
@@ -16,16 +17,12 @@ import (
 	"time"
 )
 
-func TestAuthHandler_SignUn(t *testing.T) {
+func TestAuthHandler_SignUp(t *testing.T) {
 	app := fiber.New()
 	mockAuthUsecase := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
-	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
-		func(c *fiber.Ctx) error {
-			return c.Next()
-		},
-	)
+	mockAuthMiddleware.EXPECT().AuthenticateWithJWT(&config.Config{}, mock.AnythingOfType("TokenType")).Return(nil)
 
 	RegisterHandlers(app, &config.Config{}, mockAuthUsecase, mockAuthMiddleware)
 
@@ -67,11 +64,7 @@ func TestAuthHandler_SignIn(t *testing.T) {
 	mockAuthUsecase := usecase.NewMockAuthUseCase(t)
 	mockAuthMiddleware := middleware.NewMockAuthMiddleware(t)
 
-	mockAuthMiddleware.EXPECT().AuthenticateWithAccessToken(&config.Config{}).Return(
-		func(c *fiber.Ctx) error {
-			return c.Next()
-		},
-	)
+	mockAuthMiddleware.EXPECT().AuthenticateWithJWT(&config.Config{}, mock.AnythingOfType("TokenType")).Return(nil)
 
 	RegisterHandlers(app, &config.Config{}, mockAuthUsecase, mockAuthMiddleware)
 
@@ -108,7 +101,7 @@ func TestAuthHandler_SignOut(t *testing.T) {
 	userId := uuid.New()
 
 	// Assume that the user is authorized
-	authMiddleware.On("AuthenticateWithAccessToken", &config.Config{}).Return(
+	authMiddleware.EXPECT().AuthenticateWithJWT(&config.Config{}, mock.AnythingOfType("TokenType")).Return(
 		func(c *fiber.Ctx) error {
 			c.Locals("sub", userId.String())
 			return c.Next()
@@ -128,14 +121,46 @@ func TestAuthHandler_SignOut(t *testing.T) {
 		UpdatedAt: time.Now().UTC(),
 	}
 
-	authService.On("SignOut", userId).Return(user, nil)
+	authService.EXPECT().SignOut(userId).Return(user, nil)
 
 	req := httptest.NewRequest("POST", "/auth/signout", nil)
-	req.Header.Set("Content-Type", "application/json")
 
 	resp, _ := app.Test(req)
 	data, _ := test.GetDataFromResponse[models.User](resp)
 
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
 	assert.Equal(t, user, data)
+}
+
+func TestAuthHandler_RefreshToken(t *testing.T) {
+	app := fiber.New()
+	authService := usecase.NewMockAuthUseCase(t)
+	authMiddleware := middleware.NewMockAuthMiddleware(t)
+
+	userId := uuid.New()
+
+	// Assume that the user is authorized
+	authMiddleware.EXPECT().AuthenticateWithJWT(&config.Config{}, mock.AnythingOfType("TokenType")).Return(
+		func(c *fiber.Ctx) error {
+			c.Locals("sub", userId.String())
+			c.Locals("refresh_token", "userRefreshToken")
+			return c.Next()
+		},
+	)
+
+	RegisterHandlers(app, &config.Config{}, authService, authMiddleware)
+
+	token := &usecase.Tokens{
+		AccessToken:  "access-token",
+		RefreshToken: "refresh-token",
+	}
+
+	authService.EXPECT().RefreshToken(userId, "userRefreshToken").Return(token, nil)
+	req := httptest.NewRequest("POST", "/auth/refresh", nil)
+
+	resp, _ := app.Test(req)
+	data, _ := test.GetDataFromResponse[usecase.Tokens](resp)
+
+	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
+	assert.Equal(t, token, data)
 }

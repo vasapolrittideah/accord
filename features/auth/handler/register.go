@@ -7,12 +7,12 @@ import (
 	"github.com/vasapolrittideah/accord/internal/config"
 )
 
-func RegisterHandlers(r fiber.Router, conf *config.Config, service usecase.AuthUseCase, middleware middleware.AuthMiddleware) {
+func RegisterHandlers(r fiber.Router, conf *config.Config, service usecase.AuthUseCase, m middleware.AuthMiddleware) {
 	authHandler := NewAuthHandler(service, conf)
 	router := r.Group("/auth")
 
 	router.Post("/signup", authHandler.SignUp)
 	router.Post("/signin", authHandler.SignIn)
-	router.Post("/signout", middleware.AuthenticateWithAccessToken(conf), authHandler.SignOut)
-	router.Post("/refresh", authHandler.RefreshToken)
+	router.Post("/signout", m.AuthenticateWithJWT(conf, middleware.Access), authHandler.SignOut)
+	router.Post("/refresh", m.AuthenticateWithJWT(conf, middleware.Refresh), authHandler.RefreshToken)
 }
