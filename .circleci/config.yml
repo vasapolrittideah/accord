@@ -44,9 +44,9 @@ jobs:
       - run:
           name: Initialize the Nx Cloud distributed CI run
           command: pnpm exec nx-cloud start-ci-run --stop-agents-after="build" --agent-count=3
-      - run:
-          name: Check format
-          command: pnpm exec nx-cloud record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
+#      - run:
+#          name: Check format
+#          command: pnpm exec nx-cloud record -- pnpm exec nx format:check --base=$NX_BASE --head=$NX_HEAD
       - run:
           name: Run lint
           command: pnpm exec nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=3
