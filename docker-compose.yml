@@ -1,11 +1,13 @@
 version: '3.8'
 
 services:
-  server:
-    build: .
+  api:
+    build:
+      context: .
+      dockerfile: ./Dockerfile/api.Dockerfile
     container_name: accord-server-container
     ports:
-      - 8080:8080
+      - "8080:8080"
     deploy:
       mode: replicated
       replicas: 1
@@ -16,7 +18,7 @@ services:
   database:
     image: "postgres:latest"
     ports:
-      - 5432:5432
+      - "5432:5432"
     restart: always
     deploy:
       mode: replicated

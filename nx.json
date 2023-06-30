@@ -1,0 +1,26 @@
+{
+  "implicitDependencies": {
+    "go.mod": "*"
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ]
+    }
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx-cloud",
+      "options": {
+        "cacheableOperations": [
+          "build",
+          "lint",
+          "test",
+          "e2e"
+        ],
+        "accessToken": "ZWUwZTJiMjUtYWQ2YS00Njc0LWE4ZWQtZmUxZGM0OTQyMjdlfHJlYWQtd3JpdGU="
+      }
+    }
+  }
+}
