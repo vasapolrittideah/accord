@@ -160,15 +160,12 @@ workflows:
               ordinal: [ 1, 2, 3 ]
       - main:
           name: Nx Cloud Main
-      - lint:
-          name: API Check Style
-      - test_and_coverage:
-          name: API Test and Coverage
+      - lint
+      - test_and_coverage
       - sonar:
           requires:
             - lint
             - test_and_coverage
       - build:
-          name: API Build
           requires:
             - sonar
