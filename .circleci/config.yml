@@ -13,7 +13,7 @@ jobs:
 
       - run: golangci-lint run ./... --out-format=checkstyle --print-issued-lines=false --print-linter-name=false --issues-exit-code=0 --enable=revive > golanci-report.xml
       - persist_to_workspace:
-          root: ~/project
+          root: ~/project/apps/api
           paths:
             - golanci-report.xml
 
